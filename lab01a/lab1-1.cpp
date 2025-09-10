@@ -43,8 +43,8 @@ Model* squareModel;
 
 //----------------------Globals-------------------------------------------------
 Model *model1;
-FBOstruct *fbo1, *fbo2;
-GLuint phongshader = 0, plaintextureshader = 0, lowpass = 0;
+FBOstruct *fbo1, *fbo2, *fbo3;
+GLuint phongshader = 0, plaintextureshader = 0, lowpass = 0, threshold = 0, plusshader = 0;
 
 //-------------------------------------------------------------------------------------
 
@@ -63,11 +63,14 @@ void init(void)
 	plaintextureshader = loadShaders("plaintextureshader.vert", "plaintextureshader.frag");  // puts texture on teapot
 	phongshader = loadShaders("phong.vert", "phong.frag");  // renders with light (used for initial renderin of teapot)
 	lowpass = loadShaders("plaintextureshader.vert", "lowpass.frag");
+	threshold = loadShaders("plaintextureshader.vert", "threshold.frag");
+	plusshader = loadShaders("plaintextureshader.vert", "plus.frag");
 
 	printError("init shader");
 
 	fbo1 = initFBO(initWidth, initHeight, 0);
 	fbo2 = initFBO(initWidth, initHeight, 0);
+	fbo3 = initFBO(initWidth, initHeight, 0);
 
 	// load the model
 	model1 = LoadModel("stanford-bunny.obj");
@@ -99,6 +102,14 @@ void runfilter(GLuint shader, FBOstruct *in1, FBOstruct *in2, FBOstruct *out){
     DrawModel(squareModel, shader, "in_Position", NULL, "in_TexCoord");
 
     glFlush();
+}
+
+// Pingpong a filter from in1 to in2 and back
+void pingpong(GLuint shader, FBOstruct *in1, FBOstruct *in2, int iterations){
+    for(int i = 0; i < iterations; i++){
+        runfilter(shader, in1, 0L, in2);
+        runfilter(shader, in2, 0L, in1);
+    }
 }
 
 //-------------------------------callback functions------------------------------------------
@@ -141,7 +152,13 @@ void display(void)
 
 //	glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.
 
-    runfilter(lowpass, fbo1, 0L, 0L);
+    // The bunny has been rendered to fbo1
+    // Threshold to fbo2
+    runfilter(threshold, fbo1, 0L, fbo2);
+    // Pingpong with fbo3
+    pingpong(lowpass, fbo2, fbo3, 20);
+
+    runfilter(plusshader, fbo1, fbo2, 0L);
 /*
 	useFBO(0L, fbo1, 0L);
 	glClearColor(0.0, 0.0, 0.0, 0);

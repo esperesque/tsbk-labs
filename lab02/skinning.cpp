@@ -169,6 +169,12 @@ void setupBones(void)
 // Desc:	deform the cylinder mesh according to the skeleton
 void DeformCylinder()
 {
+    // Reset shader uniforms
+    glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_rot0"), 1, GL_TRUE, IdentityMatrix().m);
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_rot1"), 1, GL_TRUE, IdentityMatrix().m);
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_pos0"), 1, GL_TRUE, IdentityMatrix().m);
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_pos1"), 1, GL_TRUE, IdentityMatrix().m);
+
 	// vec3 v1, v2;
 	int row, corner;
 
@@ -255,6 +261,11 @@ void setBoneRotation(void)
 {
 	// Uppgift 3 TODO: Here you can send the bone rotation
 	// to the vertex shader
+	mat4 m0 = g_bones[0].rot;
+	mat4 m1 = g_bones[1].rot;
+
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_rot0"), 1, GL_TRUE, m0.m);
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_rot1"), 1, GL_TRUE, m1.m);
 }
 
 
@@ -265,6 +276,11 @@ void setBoneLocation(void)
 {
 	// Uppgift 3 TODO: Here you can send the bone position
 	// to the vertex shader
+	mat4 m0 = T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z);
+	mat4 m1 = T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z);
+
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_pos0"), 1, GL_TRUE, m0.m);
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_pos1"), 1, GL_TRUE, m1.m);
 }
 
 
@@ -279,7 +295,7 @@ void DrawCylinder()
 	// Move the vertex calculations from DeformCylinder into a vertex shader.
 	// The current one is "shader.vert".
 
-	DeformCylinder();
+	//DeformCylinder();
 
 	setBoneLocation();
 	setBoneRotation();

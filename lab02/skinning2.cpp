@@ -198,23 +198,78 @@ void setupBones(void)
 // Desc:	deform the cylinder mesh according to the skeleton
 void DeformCylinder()
 {
-  int row, corner;
-  // Add more variables as needed
 
-  // for all vertices
-  for (row = 0; row < kMaxRow; row++)
-  {
-    for (corner = 0; corner < kMaxCorners; corner++)
+    int row, corner;
+    // Add more variables as needed
+
+    // Transformation matrices for bones
+    mat4 mres[kMaxBones]; // Resting state matrices
+    mat4 mmod[kMaxBones]; // Modified matrices
+    mat4 minv[kMaxBones]; // inverse of resting matrices
+
+    // Build the matrices
+    for(int i = 0; i < kMaxBones; i++){
+        // TODO
+        if(i == 0){
+            mres[i] = IdentityMatrix();
+            mmod[i] = IdentityMatrix()*g_bonesRes[i].rot;
+        }
+        else{
+            vec3 pos = g_bones[i].pos - g_bones[i-1].pos;
+            mres[i] = T(pos.x, pos.y, pos.z);
+            mmod[i] = T(pos.x, pos.y, pos.z)*g_bonesRes[i].rot;
+        }
+        //mres[i] = T(g_bones[i].pos.x, g_bones[i].pos.y, g_bones[i].pos.z);
+        //mmod[i] = T(g_bones[i].pos.x, g_bones[i].pos.y, g_bones[i].pos.z)*g_bonesRes[i].rot;
+        minv[i] = InvertMat4(mres[i]);
+    }
+
+    // for all vertices
+    for (row = 0; row < kMaxRow; row++)
     {
-      // ---------=========  PART 4 ===========---------
-      // TODO: Deform the mesh using all bones
-      //
-      // data you may use:
-      // g_bonesRes[].rot
-      // g_bones[].pos
-      // g_boneWeights
-      // g_vertsOrg
-      // g_vertsRes
+        for (corner = 0; corner < kMaxCorners; corner++)
+        {
+        // ---------=========  PART 4 ===========---------
+        // TODO: Deform the mesh using all bones
+        //
+        // data you may use:
+        // g_bonesRes[].rot
+        // g_bones[].pos
+        // g_boneWeights - 3D array
+        // g_vertsOrg - the original vertices
+        // g_vertsRes - the modified vertices
+
+        // So for every vertex, I need to get the modified and original matrices of every bone in the chain
+
+        //vec3 v = g_vertsOrg[row][corner];
+        //v += vec3(g_boneWeights[row][corner][0], g_boneWeights[row][corner][1], g_boneWeights[row][corner][2]);
+
+        vec3 v = vec3(0,0,0);
+        vec3 bone_vecs[kMaxBones];
+        for (int i=0; i < kMaxBones; i++){
+            // Determine the bone-modified vec3
+            //bone_vecs[i] = g_vertsOrg[row][corner];
+
+            // if i = 0, it's mmod[0]*minv[0]
+            // if i = 1, it's mmod[0]*mmod[1]*minv[1]*minv[0]
+            // matrix multiplication is associative, so the order of operations doesn't matter i.e. (AB)*C = A*(BC)
+
+            mat4 vmod = mmod[0];
+            mat4 vinv = minv[i];
+
+
+            for (int j = 1; j <= i; j++){
+                vmod = vmod * mmod[j];
+                vinv = vinv * minv[i-j];
+            }
+
+            bone_vecs[i] = vmod * vinv * g_vertsOrg[row][corner];
+
+            // Add every vec, multiplied by weights
+            v += bone_vecs[i]*g_boneWeights[row][corner][i];
+        }
+
+        g_vertsRes[row][corner] = v;
     }
   }
 }
@@ -228,7 +283,7 @@ void animateBones(void)
 {
 	int bone;
 	// How much for each joint? Feel free to edit.
-	float angleScales[10] = { 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f };
+	float angleScales[10] = { 1.f, 0.7f, 0.5f, 0.4f, 0.8f, 1.2f, 1.3f, 1.2f, 1.f, 1.f };
 
 	float time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 	// How much to rotate?

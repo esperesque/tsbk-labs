@@ -258,6 +258,11 @@ void setBoneRotation(void)
 // (Not mandatory.)
 void setBoneLocation(void)
 {
+    // Reset shader uniforms
+    glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_rot0"), 1, GL_TRUE, IdentityMatrix().m);
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_rot1"), 1, GL_TRUE, IdentityMatrix().m);
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_pos0"), 1, GL_TRUE, IdentityMatrix().m);
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "bone_pos1"), 1, GL_TRUE, IdentityMatrix().m);
 }
 
 

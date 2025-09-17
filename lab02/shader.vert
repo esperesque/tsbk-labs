@@ -47,7 +47,6 @@ void main(void)
     new_vec += v1*(1.0-weight);
 
 	gl_Position = matrix * new_vec;
-	//gl_Position = matrix * (in_TexCoord.x*bone_pos + in_TexCoord.y *bone_rot)* vec4(in_Position, 1.0);
 
 	// Lägg på en enkel ljussättning på vertexarna
 	float intensity = dot(in_Normal, lightDir);

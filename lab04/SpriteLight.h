@@ -19,6 +19,8 @@ typedef struct SpriteRec
 	struct SpriteRec *next;
 
 	// Add custom sprite data here as needed
+	int group;
+	vec3 nearest_pos; // position of nearest other boid
 } SpriteRec, *SpritePtr;
 
 // Globals: The sprite list, background texture and viewport dimensions (virtual or real pixels)

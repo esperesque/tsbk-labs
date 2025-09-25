@@ -1,5 +1,6 @@
 // Variant with SimpleGUI
 
+#include <iostream>
 #include <stdlib.h>
 #include "MicroGlut.h"
 #include "LoadTGA.h"
@@ -9,14 +10,19 @@
 #include "VectorUtils4.h"
 #include "SimpleGUI.h"
 
-#ifndef SPRITELIGHT_H
-#error "SpriteLight.h not included properly"
-#endif
-
 // Add more globals as needed
 
 // Example of user controllable parameter
 float someValue = 1.0;
+float move_speed = 1.0;
+
+// Weights
+float cohesion_w = 1.0;
+float separation_w = 0.5;
+float alignment_w = 1.0;
+
+vec3 p0 = vec3(0, 0, 0);
+vec3 p1 = vec3(800, 600, 0);
 
 void SpriteBehavior() // Your code!
 {
@@ -35,25 +41,102 @@ void Display()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	DrawBackground();
+	//DrawBackground();
 
 	SpriteBehavior(); // Your code
 
 // Loop though all sprites. (Several loops in real engine.)
+    vec3 avg_pos = vec3(0,0,0);
+    int g0_count = 0;
+    int g1_count = 0;
+    vec3 g1_avg_pos = vec3(0,0,0);
+    vec3 g0_avg_pos = vec3(0,0,0);
+    int sprite_count = 0;
+
+    // FIRST LOOP
 	sp = gSpriteRoot;
 	do
 	{
+	    sprite_count++;
+	    // Boids are assigned to one of two groups depending on whether they are nearer to p0 or p1
+
+	    // Step 1: Cohesion
+	    // Figure out the average position of all boids
+	    vec3 d0 = p0 - sp->position;
+	    vec3 d1 = p1 - sp->position;
+	    float l0 = sqrt(pow(d0.x, 2) + pow(d0.y, 2));
+	    float l1 = sqrt(pow(d1.x, 2) + pow(d1.y, 2));
+        std::cout << "hi";
+	    if(l0 < l1){
+            g0_count++;
+            sp->group = 0;
+            g0_avg_pos += sp->position;
+	    }
+	    else{
+	        g1_count++;
+            sp->group = 1;
+            g1_avg_pos += sp->position;
+	    }
+
+	    avg_pos += sp->position;
+
+	    // Step 2: Separation
+	    float closest_d = 9999;
+	    SpritePtr sp2 = gSpriteRoot;
+	    do{
+            if(sp != sp2){
+                vec3 d = sp2->position - sp->position;
+                float l = sqrt(pow(d.x, 2) + pow(d.y, 2));
+                if(l < closest_d){
+                    closest_d = l;
+                    sp->nearest_pos = sp2->position;
+                }
+            }
+            sp2 = sp2->next;
+	    } while (sp2 != NULL);
+
+		sp = sp->next;
+	} while (sp != NULL);
+
+    avg_pos = avg_pos / float(sprite_count);
+    if(g0_count != 0) g0_avg_pos = g0_avg_pos / float(g0_count);
+    if(g1_count != 0) g1_avg_pos = g1_avg_pos / float(g1_count);
+
+    // SECOND LOOP
+
+    sp = gSpriteRoot;
+
+    do
+	{
 		// Your code
 		// Example affecting sprites by a controllable parameter
-		sp->speed = normalize(sp->speed) * someValue;
+		vec3 co_dir;
+		vec3 se_dir = vec3(0,0,0);
+		vec3 al_dir = vec3(0,0,0);
+		if(sp->group == 0){
+            co_dir = g0_avg_pos - sp->position;
+		}
+		else{
+            co_dir = g1_avg_pos - sp->position;
+		}
+		co_dir = normalize(co_dir);
+		se_dir = sp->nearest_pos - sp->position;
+		float se_len = sqrt(pow(se_dir.x, 2) + pow(se_dir.y, 2));
+		se_dir = -normalize(se_dir);
+
+		vec3 dir = co_dir*cohesion_w + al_dir*alignment_w;
+		if(se_len < 100){
+            dir += se_dir*separation_w;
+		}
+		//vec3 dir = avg_pos - sp->position;
+		sp->speed = normalize(dir) * move_speed;
 
 		HandleSprite(sp); // Default movement my speed. Callback in a real engine
 		DrawSprite(sp);
 		sp = sp->next;
 	} while (sp != NULL);
 
-      	sgDraw();
-
+    sgDraw();
 	glutSwapBuffers();
 }
 
@@ -97,6 +180,11 @@ void Init()
 	NewSprite(sheepFace, 100, 200, 1, 1);
 	NewSprite(sheepFace, 200, 100, 1.5, -1);
 	NewSprite(sheepFace, 250, 200, -1, 1.5);
+	NewSprite(sheepFace, 400, 400, -1, 1.5);
+	NewSprite(dogFace, 0, 300, 1, 1);
+	NewSprite(dogFace, 600, 400, 0.1, -1);
+	NewSprite(dogFace, 600, 480, 0.1, -1);
+	NewSprite(dogFace, 700, 50, 0.1, -1);
 
 	sgCreateStaticString(20, 40, "Slider and float display");
 	sgCreateSlider(-1, -1, 200, &someValue, 0.5, 5);

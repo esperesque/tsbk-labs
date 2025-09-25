@@ -144,11 +144,14 @@ void updateWorld()
 {
 	// Zero forces
 	int i, j;
+
 	for (i = 0; i < kNumBalls; i++)
 	{
+
 		ball[i].F = SetVector(0,0,0);
 		ball[i].T = SetVector(0,0,0);
 	}
+    //ball[0].F = vec3(0.5,0,0.0)*0.000001;
 
 	// Wall tests
 	for (i = 0; i < kNumBalls; i++)
@@ -165,14 +168,15 @@ void updateWorld()
 
 	// Detect collisions, calculate speed differences, apply forces (uppgift 2)
 	for (i = 0; i < kNumBalls; i++){
-        ball[i].F += ball[i].initialF*(1/deltaT);
-        ball[i].initialF = vec3(0,0,0);
+        //ball[i].F += ball[i].initialF*(1/deltaT);
+        //ball[i].initialF = vec3(0,0,0);
+        ball[i].v = ball[i].P * 1.0/(ball[i].mass);
 
         for (j = i+1; j < kNumBalls; j++)
         {
             // Check for collisions
 
-            vec3 dvec = ball[i].X - ball[j].X;
+            vec3 dvec = ball[j].X - ball[i].X;
             vec3 dvel = ball[j].v - ball[i].v;
             float dist = sqrt(pow(dvec.x,2) + pow(dvec.z,2));
             if(DotProduct(dvec, dvel) >= 0){
@@ -184,34 +188,16 @@ void updateWorld()
                 // Calculate impulse
                 float elasticity = 1.0; // should be between 0 and 1
 
-                vec3 n = Normalize(dvec);
+                vec3 n = Normalize(-dvec);
 
-                float v_rel = DotProduct((ball[j].v-ball[i].v), n);
-                float j_ = (-(elasticity + 1)*v_rel) / ((1.0f/ball[i].mass)+(1.0f/ball[j].mass));
+                float v_rel = DotProduct((ball[i].v-ball[j].v), n);
+                float j_ = (-(elasticity + 1)*v_rel) / ((1.0/ball[i].mass)+(1.0/ball[j].mass));
                 vec3 imp = n*j_;
 
-                ball[i].F += imp*(1/deltaT);
-                ball[j].F -= imp*(1/deltaT);
-
-                //ball[i].v = ScalarMult(ball[i].P, 1.0/(ball[i].mass));
-                //ball[j].v = ScalarMult(ball[j].P, 1.0/(ball[j].mass));
-				//vec3 v_diff = VectorSub(ball[i].v, ball[j].v);
-                //ball[i].X = getRandomBoardPos();
-                //ball[i].F = ball[j].F*100;
-                //ball[j].F = ball[i].F*100;
+                ball[i].F += imp*(1/deltaT);//*0.5;
+                ball[j].F -= imp*(1/deltaT);//*0.5;
             }
-
-
-
-            //if(ball[i].)
-            // YOUR CODE HERE
-            /*
-            vec3 shoot_vector = vec3(0.0, 0.0, 1.0);
-            shoot_vector = Norm(shoot_vector);
-            float shoot_force = 0.00000002;
-            ball[i].F += shoot_vector * shoot_force;*/
         }
-
     }
 
 	// Control rotation here to movement only, no friction (uppgift 1)
@@ -329,10 +315,10 @@ void init()
 
 	switch(scenario){
     case 0: // Newton's Cradle
-        kNumBalls = 2;
+        kNumBalls = 4;
         for (i = 0; i < kNumBalls; i++)
         {
-            ball[i].mass = 200.0;
+            ball[i].mass = 1.0;
             ball[i].X = vec3(0.0, 0.0, 0.0);
             ball[i].P = vec3(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
             ball[i].R = IdentityMatrix();
@@ -343,6 +329,8 @@ void init()
         ball[2].X = vec3(0.1, 0.0, 0.0);
         ball[3].X = vec3(0.5, 0.0, 0.0);
         ball[0].initialF = vec3(0.0,0,0.8)*0.01;
+        ball[0].P = vec3(0.5,0,0);
+        ball[0].v = vec3(0.5,0,0);
 
         break;
     default:

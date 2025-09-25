@@ -62,16 +62,18 @@
 
 1713525814 c:\_dev\tsbk-labs\common\windows\microglut.h
 
-1758788633 source:c:\_dev\tsbk-labs\lab03\lab3.cpp
-	<stdio.h>
-	<math.h>
+1758803082 source:c:\_dev\tsbk-labs\lab04\lab4.cpp
 	<stdlib.h>
-	<time.h>
 	"MicroGlut.h"
-	"VectorUtils4.h"
-	"GL_utilities.h"
-	"LittleOBJLoader.h"
 	"LoadTGA.h"
+	"SpriteLight.h"
+	"GL_utilities.h"
+	"VectorUtils4.h"
+	"SimpleGUI.h"
+
+1758803240 c:\_dev\tsbk-labs\lab04\spritelight.h
+	"LoadTGA.h"
+	"VectorUtils4.h"
 
 1713426668 c:\_dev\tsbk-labs\common\vectorutils4.h
 	<OpenGL/gl3.h>
@@ -80,24 +82,38 @@
 	<math.h>
 	<stdio.h>
 
-1713346454 c:\_dev\tsbk-labs\common\littleobjloader.h
+1680337022 c:\_dev\tsbk-labs\lab04\simplegui.h
 	<OpenGL/gl3.h>
-	"glew.h"
 	<GL/gl.h>
-	"VectorUtils4.h"
-	<stdio.h>
-	<stdlib.h>
-	<string.h>
-	<math.h>
-	"VectorUtils4.h"
-
-1758785774 source:c:\_dev\tsbk-labs\lab03\lab3re.cpp
-	<stdio.h>
-	<math.h>
-	<stdlib.h>
 	"MicroGlut.h"
+
+1723618965 source:c:\_dev\tsbk-labs\lab04\spritelight.c
+	"SpriteLight.h"
+	"LoadTGA.h"
+	<math.h>
 	"VectorUtils4.h"
 	"GL_utilities.h"
-	"LittleOBJLoader.h"
+
+1758802932 source:c:\_dev\tsbk-labs\lab04\simplegui.c
+	<stdlib.h>
+	<stdio.h>
+	<math.h>
+	<string.h>
+	"GL_utilities.h"
+	"SimpleGUI.h"
+
+1758802932 source:c:\_dev\tsbk-labs\lab04\simplegui.cpp
+	<stdlib.h>
+	<stdio.h>
+	<math.h>
+	<string.h>
+	"GL_utilities.h"
+	"SimpleGUI.h"
+
+1723618965 source:c:\_dev\tsbk-labs\lab04\spritelight.cpp
+	"SpriteLight.h"
 	"LoadTGA.h"
+	<math.h>
+	"VectorUtils4.h"
+	"GL_utilities.h"
 

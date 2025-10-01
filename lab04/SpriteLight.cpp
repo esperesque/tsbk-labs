@@ -42,7 +42,7 @@ TextureData *GetFace(const char *fileName)
 	return fp;
 }
 
-struct SpriteRec *NewSprite(TextureData *f, GLfloat h, GLfloat v, GLfloat hs, GLfloat vs)
+struct SpriteRec *NewSprite(TextureData *f, GLfloat h, GLfloat v, GLfloat hs, GLfloat vs, int type)
 {
 	SpritePtr sp;
 
@@ -56,6 +56,8 @@ struct SpriteRec *NewSprite(TextureData *f, GLfloat h, GLfloat v, GLfloat hs, GL
 	sp->face = f;
 	sp->rotation = 0;
 	sp->dir = SetVector(hs, vs, 0);
+	sp->type = type;
+	sp->food_timer = 200.0f;
 	return sp;
 }
 

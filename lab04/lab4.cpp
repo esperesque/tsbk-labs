@@ -11,6 +11,7 @@
 #include "SimpleGUI.h"
 
 vec3 rotate_towards(vec3 a, vec3 b, float angle);
+float randf_range(float a, float b);
 
 // Add more globals as needed
 
@@ -19,12 +20,16 @@ float someValue = 1.0;
 float move_speed = 1.0;
 float turn_rate = 0.25;
 
-float separation_range = 400; // Distance at which separation vector becomes 0
+float separation_range = 100; // Distance at which separation vector becomes 0
+
+
 
 // Weights
 float cohesion_w = 1.0;
 float separation_w = 0.6;
 float alignment_w = 0.7;
+float edge_w = 1.4; // Edge avoidance weight
+float food_w = 1.1;
 
 vec3 p0 = vec3(0, 0, 0);
 vec3 p1 = vec3(800, 600, 0);
@@ -33,6 +38,15 @@ void SpriteBehavior() // Your code!
 {
 // Add your lab code here. You may edit anywhere you want, but most of it goes here.
 // You can start from the global list gSpriteRoot.
+}
+
+void SpawnFood(){
+    TextureData *foodFace = GetFace("bilder/mat.tga"); // Food
+
+    float x = randf_range(100, 700);
+    float y = randf_range(100, 500);
+
+    NewSprite(foodFace, x, y, 0.0, 0,2);
 }
 
 // Drawing routine
@@ -46,7 +60,7 @@ void Display()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	//DrawBackground();
+	DrawBackground();
 
 	SpriteBehavior(); // Your code
 
@@ -64,6 +78,10 @@ void Display()
 	sp = gSpriteRoot;
 	do
 	{
+	    if(sp->type == 2){
+            sp = sp->next;
+            continue;
+	    }
 	    sprite_count++;
 	    // Boids are assigned to one of two groups depending on whether they are nearer to p0 or p1
 
@@ -107,12 +125,25 @@ void Display()
 	    // Step 2: Separation + Step 3: Alignment
 
 	    sp->avoid_vec = vec3(0,0,0);
+	    sp->food_vec = vec3(0,0,0);
 
 	    // Version 2: Each other boid has a weighted influence depending on how close it is
 	    // No, you take the average of all their positions and then weight the separation to closeness to that position
 	    SpritePtr sp_other = gSpriteRoot;
 	    do{
             if(sp == sp_other){
+                sp_other = sp_other->next;
+                continue;
+            }
+
+            // is food?
+            if(sp_other->type == 2){
+                if(sp_other->food_timer <= 0){
+                    sp_other = sp_other->next;
+                    continue;
+                }
+                vec3 f_vec = sp_other->position - sp->position;
+                sp->food_vec = normalize(f_vec);
                 sp_other = sp_other->next;
                 continue;
             }
@@ -177,11 +208,25 @@ void Display()
     // SECOND LOOP
 
     sp = gSpriteRoot;
+    SpritePtr last_sp = gSpriteRoot;
 
     do
 	{
 		// Your code
 		// Example affecting sprites by a controllable parameter
+		if(sp->type == 2){
+            sp->food_timer -= 1.0;
+            if(sp->food_timer <= 0.0){
+                // Delete
+                last_sp->next = sp->next; // this becomes null.
+                //delete(sp); // can't do this
+                sp = last_sp->next;
+                continue;
+            }
+            DrawSprite(sp);
+            sp = sp->next;
+            continue;
+	    }
 		vec3 co_dir;
 		vec3 se_dir = vec3(0,0,0);
 		vec3 al_dir = vec3(0,0,0);
@@ -211,11 +256,35 @@ void Display()
 
 		se_dir = sp->avoid_vec;
 
-		vec3 dir = co_dir*cohesion_w + se_dir*separation_w + al_dir*alignment_w;
-		//if(se_len < 100){
-        //    dir += se_dir*separation_w;
-		//}
-		//vec3 dir = avg_pos - sp->position;
+		vec3 edge_dir = vec3(0,0,0);
+		// Edge avoidance
+		if(sp->position.x > 700){
+            edge_dir.x += -1;
+		}
+		if(sp->position.x < 100){
+            edge_dir.x += 1;
+		}
+		if(sp->position.y >500){
+            edge_dir.y -= 1;
+		}
+		if(sp->position.y < 100){
+            edge_dir.y += 1;
+		}
+
+		if(edge_dir.x != 0 && edge_dir.y != 0){
+            edge_dir = normalize(edge_dir);
+		}
+
+		vec3 food_dir = vec3(0,0,0);
+		if(sp->food_vec.x != 0 && sp->food_vec.y != 0){
+            food_dir = sp->food_vec;
+		}
+
+        // Put it all together
+        float c = cohesion_w * sp->bias.x;
+        float s = separation_w * sp->bias.y;
+        float a = alignment_w * sp->bias.z;
+		vec3 dir = co_dir*c + se_dir*s + al_dir*a + edge_dir*edge_w + food_dir*food_w;
 
 		// Smooth turning
 		vec3 prev_dir = sp->dir;
@@ -229,6 +298,7 @@ void Display()
 
 		HandleSprite(sp); // Default movement my speed. Callback in a real engine
 		DrawSprite(sp);
+		last_sp = sp;
 		sp = sp->next;
 	} while (sp != NULL);
 
@@ -247,6 +317,15 @@ vec3 rotate_towards(vec3 a, vec3 b, float angle){
     vec3 rot_a = a*cos(angle) + CrossProduct(ax,a)*sin(angle) + DotProduct(ax,DotProduct(ax,a))*(1-cos(angle));
 
     return(rot_a);
+}
+
+float random_float()
+{
+    return (float)(rand()) / (float)(RAND_MAX);
+}
+
+float randf_range(float a, float b){
+    return(a + (b-a)*random_float());
 }
 
 void Reshape(int h, int v)
@@ -286,31 +365,53 @@ void Init()
 	dogFace = GetFace("bilder/dog.tga"); // A dog
 	foodFace = GetFace("bilder/mat.tga"); // Food
 
-	NewSprite(sheepFace, 100, 200, 1, 1);
-	NewSprite(sheepFace, 200, 100, 1.5, -1);
-	NewSprite(sheepFace, 250, 200, -1, 1.5);
-	NewSprite(sheepFace, 400, 400, -1, 1.5);
-	NewSprite(dogFace, 0, 300, 1, 1);
-	NewSprite(dogFace, 600, 400, 0.1, -1);
-	NewSprite(dogFace, 600, 480, 0.1, -1);
-	NewSprite(dogFace, 700, 50, 0.1, -1);
+	NewSprite(sheepFace, 100, 200, 1, 1,0);
+	NewSprite(sheepFace, 200, 100, 1.5, -1,0);
+	NewSprite(sheepFace, 250, 200, -1, 1.5,0);
+	NewSprite(sheepFace, 400, 400, -1, 1.5,0);
+	NewSprite(dogFace, 0, 300, 1, 1,0);
+	NewSprite(dogFace, 600, 400, 0.1, -1,0);
+	NewSprite(dogFace, 600, 480, 0.1, -1,0);
+	NewSprite(dogFace, 700, 50, 0.1, -1,0);
+	NewSprite(sheepFace, 500, 50, 0.1, -1,0);
+	NewSprite(dogFace, 300, 150, 0.1, -1,0);
+	NewSprite(blackieFace, 400, 150, 0.1, -1,1);
+	NewSprite(blackieFace, 600, 275, 0.1, -1,1);
+	NewSprite(blackieFace, 100, 125, 0.1, -1,1);
+	NewSprite(blackieFace, 100, 575, 0.1, -1,1);
+
+	// BUG: If two sprites are created with the same position, all sprites vanish
+	// Probably a normalized zero-vector somewhere
+
+	//NewSprite(blackieFace, 400, 400, 0.1, 0.1, 1);
+	//NewSprite(blackieFace, 500, 400, 0.1, 0.1, 1);
 
 	// Determine groups
     SpritePtr sp = gSpriteRoot;
     do{
-        int g = rand() % 1;
+        sp->bias = vec3(1,1,1); // No idea why this is needed, but it is
+        if(sp->type == 1){
+            sp->bias.x = randf_range(0.1, 2.0); // randomFloat();
+            sp->bias.y = randf_range(0.6, 3.0); //randomFloat();
+            sp->bias.z = randf_range(-1.0, 0.5); //randomFloat();
+        }
+        int g = rand() % 2;
         sp->group = g;
         sp = sp->next;
     }
     while(sp != NULL);
 
-	sgCreateStaticString(20, 40, "Slider and float display");
-	sgCreateSlider(-1, -1, 200, &cohesion_w, 0.1, 2.0);
+	sgCreateStaticString(20, 40, "==========Controls==========");
 	sgCreateDisplayFloat(-1, -1, "Cohesion: ", &cohesion_w);
-    sgCreateSlider(-1, -1, 200, &separation_w, 0.1, 2.0);
+	sgCreateSlider(-1, -1, 200, &cohesion_w, 0.1, 2.0);
 	sgCreateDisplayFloat(-1, -1, "Separation: ", &separation_w);
-	sgCreateSlider(-1, -1, 200, &alignment_w, 0.1, 2.0);
+    sgCreateSlider(-1, -1, 200, &separation_w, 0.1, 2.0);
 	sgCreateDisplayFloat(-1, -1, "Alignment: ", &alignment_w);
+	sgCreateSlider(-1, -1, 200, &alignment_w, 0.1, 2.0);
+	sgCreateDisplayFloat(-1, -1, "Separation range: ", &separation_range);
+	sgCreateSlider(-1, -1, 200, &separation_range, 10.0, 200.0);
+	sgCreateButton(-1, -1, "FOOD", SpawnFood);
+
 
 	// Always fix the colors if it looks bad.
         sgSetFrameColor(0,0,0);

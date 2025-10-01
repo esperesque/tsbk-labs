@@ -62,7 +62,7 @@
 
 1713525814 c:\_dev\tsbk-labs\common\windows\microglut.h
 
-1758807095 source:c:\_dev\tsbk-labs\lab04\lab4.cpp
+1759316326 source:c:\_dev\tsbk-labs\lab04\lab4.cpp
 	<iostream>
 	<stdlib.h>
 	"MicroGlut.h"
@@ -72,7 +72,7 @@
 	"VectorUtils4.h"
 	"SimpleGUI.h"
 
-1758806638 c:\_dev\tsbk-labs\lab04\spritelight.h
+1759322702 c:\_dev\tsbk-labs\lab04\spritelight.h
 	"LoadTGA.h"
 	"VectorUtils4.h"
 
@@ -111,7 +111,7 @@
 	"GL_utilities.h"
 	"SimpleGUI.h"
 
-1723618965 source:c:\_dev\tsbk-labs\lab04\spritelight.cpp
+1759320125 source:c:\_dev\tsbk-labs\lab04\spritelight.cpp
 	"SpriteLight.h"
 	"LoadTGA.h"
 	<math.h>

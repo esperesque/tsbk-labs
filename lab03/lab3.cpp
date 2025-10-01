@@ -147,8 +147,8 @@ void updateWorld()
 
 	for (i = 0; i < kNumBalls; i++)
 	{
-
-		ball[i].F = SetVector(0,0,0);
+        ball[i].F = ball[i].initialF;
+		//ball[i].F = SetVector(0,0,0);
 		ball[i].T = SetVector(0,0,0);
 	}
     //ball[0].F = vec3(0.5,0,0.0)*0.000001;
@@ -318,19 +318,19 @@ void init()
         kNumBalls = 4;
         for (i = 0; i < kNumBalls; i++)
         {
-            ball[i].mass = 1.0;
+            ball[i].mass = 1000;
             ball[i].X = vec3(0.0, 0.0, 0.0);
             ball[i].P = vec3(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
             ball[i].R = IdentityMatrix();
-            ball[i].initialF = vec3(0,0,0);
+            ball[i].initialF = vec3(0.1*i,0,0.1)*0.001;
         }
         ball[0].X = vec3(-0.5, 0.0, 0.0);
         ball[1].X = vec3(-0.1, 0.0, 0.0);
         ball[2].X = vec3(0.1, 0.0, 0.0);
         ball[3].X = vec3(0.5, 0.0, 0.0);
-        ball[0].initialF = vec3(0.0,0,0.8)*0.01;
-        ball[0].P = vec3(0.5,0,0);
-        ball[0].v = vec3(0.5,0,0);
+        //ball[0].initialF = vec3(1.0,0,0.0)*0.0001;
+        //ball[0].P = vec3(0,0,0);
+        //ball[0].v = vec3(0,0,0);
 
         break;
     default:

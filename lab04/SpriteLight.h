@@ -21,6 +21,9 @@ typedef struct SpriteRec
 	// Add custom sprite data here as needed
 	int group;
 	vec3 nearest_pos; // position of nearest other boid
+	vec3 dir = vec3(0,0,0); // last calculated direction vector
+	vec3 avg_dir; // average direction of boids in the same group
+	vec3 avoid_vec = vec3(0,0,0); // wants to move away from this position
 } SpriteRec, *SpritePtr;
 
 // Globals: The sprite list, background texture and viewport dimensions (virtual or real pixels)

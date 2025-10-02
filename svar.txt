@@ -1,0 +1,18 @@
+Hur ser högdagrarna ut i 1a? Varför?
+
+Hur allokerar man en tom textur?
+initFBO med tom textur.
+
+Hur många pass körde du lågpassfiltret i 1c och 1d?
+idk, många
+
+Bör trunkeringen göras i egen shader eller som del av en shader som gör något mer? Varför?
+
+Vilken bumpmappning tycker du är att föredra, vykoordinater eller texturkoordinater? Varför?
+idk
+
+Vad är skillnaden mellan att arbeta i vy- och texturkoordinater?
+idk
+
+Blev Mvt rätt med mat3 i 2b? Om inte, vad gjorde du åt det?
+Krävdes transponering?

@@ -67,7 +67,7 @@ GLfloat Vs[24][3] = {
 							{-1.0,0.0,0.0},
 							{-1.0,0.0,0.0},
 							{-1.0,0.0,0.0},
-							
+
 							};
 GLfloat Vt[24][3] = {
 							// 3-4
@@ -100,13 +100,14 @@ GLfloat Vt[24][3] = {
 							{0.0,-1.0,0.0},
 							{0.0,-1.0,0.0},
 							{0.0,-1.0,0.0},
-							
+
 							};
 
 //----------------------Globals-------------------------------------------------
 Model *cube;
-GLuint shader = 0;
+GLuint shader = 0, txshader = 0;
 GLuint bumpTex;
+GLuint cubeTex;
 unsigned int vsBuffer, vtBuffer; // Attribute buffers for Vs and Vt
 
 //-------------------------------------------------------------------------------------
@@ -128,7 +129,8 @@ void init(void)
     shader = loadShaders("lab1-2.vert", "lab1-2.frag");
 
     // Load bump map (you are encouraged to try different ones)
-    LoadTGATextureSimple("bumpmaps/uppochner.tga", &bumpTex);
+    LoadTGATextureSimple("bumpmaps/ruta.tga", &bumpTex);
+    //LoadTGATexture("bumpmaps/stegu.tga", cubeTex);
 
 	// load the model
     cube = LoadModelPlus("cubeexp.obj");
@@ -140,7 +142,7 @@ void init(void)
 	vec3 up = vec3(0, 1, 0);
 	viewMatrix = lookAtv(cam, point, up);
 	modelToWorldMatrix = IdentityMatrix();
-	
+
 	// Upload Vs and Vt arrays to VBOs
 	glBindVertexArray(cube->vao);
 	glGenBuffers(1, &vsBuffer);
@@ -155,6 +157,11 @@ void init(void)
 	glBufferData(GL_ARRAY_BUFFER, 24*3*sizeof(GLfloat), Vt, GL_STATIC_DRAW);
 	glVertexAttribPointer(glGetAttribLocation(shader, "Vt"), 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(glGetAttribLocation(shader, "Vt"));
+
+    //glUniform1i(glGetUniformLocation(shader, "texUnit"), 1); // Texture unit 1
+    glActiveTexture(GL_TEXTURE1);
+	LoadTGATextureSimple("bumpmaps/stegu.tga", &cubeTex);
+	glBindTexture(GL_TEXTURE_2D, cubeTex);
 }
 
 //-------------------------------callback functions------------------------------------------
@@ -172,7 +179,8 @@ void display(void)
 
     glUniformMatrix4fv(glGetUniformLocation(shader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
     glUniformMatrix4fv(glGetUniformLocation(shader, "viewMatrix"), 1, GL_TRUE, vm2.m);
-    glUniform1i(glGetUniformLocation(shader, "texUnit"), 0);
+    glUniform1i(glGetUniformLocation(shader, "texUnit"), 1);
+    glUniform1i(glGetUniformLocation(shader, "bumpMap"), 0);
 
     DrawModel(cube, shader, "in_Position", "in_Normal", "in_TexCoord");
 
@@ -204,9 +212,9 @@ void mouseDragged(int x, int y)
 {
 	vec3 p;
 	mat4 m;
-	
+
 	// This is a simple and IMHO really nice trackball system:
-	
+
 	// Use the movement direction to create an orthogonal rotation axis
 
 	p.y = x - prevx;
@@ -216,12 +224,12 @@ void mouseDragged(int x, int y)
 	// Create a rotation around this axis and premultiply it on the model-to-world matrix
 	// Limited to fixed camera! Will be wrong if the camera is moved!
 
-	m = ArbRotate(p, sqrt(p.x*p.x + p.y*p.y) / 50.0); // Rotation in view coordinates	
+	m = ArbRotate(p, sqrt(p.x*p.x + p.y*p.y) / 50.0); // Rotation in view coordinates
 	modelToWorldMatrix = m * modelToWorldMatrix;
-	
+
 	prevx = x;
 	prevy = y;
-	
+
 	glutPostRedisplay();
 }
 

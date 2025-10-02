@@ -61,6 +61,7 @@ void BuildCylinder()
 {
 	long	row, corner, cornerIndex;
 	float g_vertstex[kMaxRow][kMaxCorners][2];
+	float b =0.5;
 
 	// Sets the values for all vertices in the mesh
 	for (row = 0; row < kMaxRow; row++)
@@ -186,6 +187,7 @@ void DeformCylinder()
 	mat4 m0ti = InvertMat4(m0t);
 	mat4 m1ti = InvertMat4(m1t);
 
+	float a = 0.5;
 	// Apply bone rotation
 	mat4 m0p = m0t*g_bones[0].rot;
 	mat4 m1p = m1t*g_bones[1].rot;
@@ -295,10 +297,10 @@ void DrawCylinder()
 	// Move the vertex calculations from DeformCylinder into a vertex shader.
 	// The current one is "shader.vert".
 
-	//DeformCylinder();
+	DeformCylinder();
 
-	setBoneLocation();
-	setBoneRotation();
+	//setBoneLocation();
+	//setBoneRotation();
 
 // update cylinder vertices:
 	glBindVertexArray(cylinderModel->vao);

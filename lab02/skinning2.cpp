@@ -69,7 +69,7 @@ void initBoneWeights(void)
 		for (corner = 0; corner < kMaxCorners; corner++)
 		{
 			float boneWeights[kMaxBones];
-			float totalBoneWeight = 0.f;
+			float totalBoneWeight = 0.0f;
 
 			float maxBoneWeight = 0.f;
 
@@ -283,7 +283,7 @@ void animateBones(void)
 {
 	int bone;
 	// How much for each joint? Feel free to edit.
-	float angleScales[10] = { 1.f, 0.7f, 0.5f, 0.4f, 0.8f, 1.2f, 1.3f, 1.2f, 1.f, 1.f };
+	float angleScales[10] = { 1.f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.f, 1.f };
 
 	float time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 	// How much to rotate?

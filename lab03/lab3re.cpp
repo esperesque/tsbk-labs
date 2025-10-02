@@ -1,463 +1,451 @@
 // Laboration i spelfysik: Biljardbordet
-// Av Ingemar Ragnemalm 2010, baserad p� material av Tomas Szabo.
-// 2012: Ported to OpenGL 3.2 by Justina Mickonyt� and Ingemar R.
+// By Ingemar Ragnemalm 2010, based on material by Tomas Szabo.
+// 2012: Ported to OpenGL 3.2 by Justina Mickonyte and Ingemar R.
 // 2013: Adapted to VectorUtils3 and MicroGlut. Variant without zpr
 // 2020: Cleanup.
 // 2023: Better C++
 
-// #include <iostream>
-
-#include <iostream>
-#include <math.h>
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #define MAIN
+#include "MicroGlut.h"
+#include "VectorUtils4.h"
 #include "GL_utilities.h"
 #include "LittleOBJLoader.h"
 #include "LoadTGA.h"
-#include "MicroGlut.h"
-#include "VectorUtils4.h"
 // uses framework Cocoa
 // uses framework OpenGL
 
 // initial width and heights
-#define W 600
-#define H 600
+const int initWidth=800, initHeight=800;
 
 #define NEAR 1.0
 #define FAR 100.0
 
 #define kBallSize 0.1
 
-#define abs(x) (x > 0.0 ? x : -x)
+#define abs(x) (x > 0.0? x: -x)
 
-typedef struct {
-  Model *model;
+typedef struct
+{
+  Model* model;
   GLuint textureId;
 } ModelTexturePair;
 
-typedef struct {
+typedef struct
+{
   GLuint tex;
   GLfloat mass;
 
   vec3 X, P, L; // position, linear momentum, angular momentum
-  mat4 R;       // Rotation
+  mat4 R; // Rotation
 
   vec3 F, T; // accumulated force and torque
 
-  //  mat4 J, Ji; We could have these but we can live without them for spheres.
+//  mat4 J, Ji; We could have these but we can live without them for spheres.
   vec3 omega; // Angular momentum
-  vec3 v;     // Change in velocity
+  vec3 v; // Change in velocity
 
 } Ball;
 
-typedef struct {
-  GLfloat diffColor[4], specColor[4], ka, kd, ks,
-      shininess; // coefficients and specular exponent
+typedef struct
+{
+    GLfloat diffColor[4], specColor[4],
+    ka, kd, ks, shininess;  // coefficients and specular exponent
 } Material;
 
-Material
-    ballMt = {{1.0, 1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 0.0}, 0.1, 0.6, 1.0, 50},
-    shadowMt = {{0.0, 0.0, 0.0, 0.5}, {0.0, 0.0, 0.0, 0.5}, 0.1, 0.6, 1.0, 5.0},
-    tableMt = {{0.2, 0.1, 0.0, 1.0}, {0.4, 0.2, 0.1, 0.0}, 0.1, 0.6, 1.0, 5.0},
-    tableSurfaceMt = {
-        {0.1, 0.5, 0.1, 1.0}, {0.0, 0.0, 0.0, 0.0}, 0.1, 0.6, 1.0, 0.0};
+Material ballMt = { { 1.0, 1.0, 1.0, 1.0 }, { 1.0, 1.0, 1.0, 0.0 },
+                    0.1, 0.6, 1.0, 50
+                },
+        shadowMt = { { 0.0, 0.0, 0.0, 0.5 }, { 0.0, 0.0, 0.0, 0.5 },
+                    0.1, 0.6, 1.0, 5.0
+                },
+        tableMt = { { 0.2, 0.1, 0.0, 1.0 }, { 0.4, 0.2, 0.1, 0.0 },
+                    0.1, 0.6, 1.0, 5.0
+                },
+        tableSurfaceMt = { { 0.1, 0.5, 0.1, 1.0 }, { 0.0, 0.0, 0.0, 0.0 },
+                    0.1, 0.6, 1.0, 0.0
+                };
 
-enum { kNumBalls = 16 }; // Change as desired, max 16
+
+enum {kNumBalls = 16}; // Change as desired, max 16
+int numBalls = 4;
+float elasticity = 0.5;
 
 //------------------------------Globals---------------------------------
 ModelTexturePair tableAndLegs, tableSurf;
 Model *sphere;
-Ball ball[16]; // We only use kNumBalls but textures for all 16 are always
-               // loaded so they must exist. So don't change here, change above.
+Ball ball[16]; // We only use kNumBalls but textures for all 16 are always loaded so they must exist. So don't change here, change above.
 
 GLfloat deltaT, currentTime;
 
 vec3 cam, point;
 
 GLuint shader = 0;
-GLint lastw = W, lasth = H; // for resizing
+GLint lastw = initWidth, lasth = initHeight;  // for resizing
 //-----------------------------matrices------------------------------
-mat4 projectionMatrix, modelToWorldMatrix, viewMatrix, rotateMatrix,
-    scaleMatrix, transMatrix, tmpMatrix;
+mat4 projectionMatrix, modelToWorldMatrix,
+        viewMatrix, rotateMatrix, scaleMatrix, transMatrix, tmpMatrix;
 
 //------------------------- lighting--------------------------------
-vec3 lightSourcesColorArr[] = {vec3(1.0f, 1.0f, 1.0f)}; // White light
+vec3 lightSourcesColorArr[] = { vec3(1.0f, 1.0f, 1.0f) }; // White light
 GLfloat specularExponent[] = {50.0};
 GLint directional[] = {0};
-vec3 lightSourcesDirectionsPositions[] = {vec3(0.0, 10.0, 0.0)};
+vec3 lightSourcesDirectionsPositions[] = { vec3(0.0, 10.0, 0.0) };
 
-//----------------------------------Utility
-// functions-----------------------------------
 
-void loadModelTexturePair(ModelTexturePair *modelTexturePair, const char *model,
-                          const char *texture) {
-  modelTexturePair->model = LoadModelPlus(
-      model); // , shader, "in_Position", "in_Normal", "in_TexCoord");
+//----------------------------------Utility functions-----------------------------------
+
+void loadModelTexturePair(ModelTexturePair* modelTexturePair,
+			  const char* model, const char* texture)
+{
+  modelTexturePair->model = LoadModelPlus(model); // , shader, "in_Position", "in_Normal", "in_TexCoord");
   if (texture)
     LoadTGATextureSimple((char *)texture, &modelTexturePair->textureId);
   else
     modelTexturePair->textureId = 0;
 }
 
-void renderModelTexturePair(ModelTexturePair *modelTexturePair) {
-  if (modelTexturePair->textureId)
-    glUniform1i(glGetUniformLocation(shader, "objID"), 0); // use texture
-  else
-    glUniform1i(glGetUniformLocation(shader, "objID"),
-                1); // use material color only
+void renderModelTexturePair(ModelTexturePair* modelTexturePair)
+{
+    if(modelTexturePair->textureId)
+        glUniform1i(glGetUniformLocation(shader, "objID"), 0);  // use texture
+    else
+        glUniform1i(glGetUniformLocation(shader, "objID"), 1); // use material color only
 
-  glBindTexture(GL_TEXTURE_2D, modelTexturePair->textureId);
-  glUniform1i(glGetUniformLocation(shader, "texUnit"), 0);
+    glBindTexture(GL_TEXTURE_2D, modelTexturePair->textureId);
+    glUniform1i(glGetUniformLocation(shader, "texUnit"), 0);
 
-  DrawModel(modelTexturePair->model, shader, "in_Position", "in_Normal", NULL);
+    DrawModel(modelTexturePair->model, shader, "in_Position", "in_Normal", NULL);
 }
 
-void loadMaterial(Material mt) {
-  glUniform4fv(glGetUniformLocation(shader, "diffColor"), 1, &mt.diffColor[0]);
-  glUniform1fv(glGetUniformLocation(shader, "shininess"), 1, &mt.shininess);
+void loadMaterial(Material mt)
+{
+    glUniform4fv(glGetUniformLocation(shader, "diffColor"), 1, &mt.diffColor[0]);
+    glUniform1fv(glGetUniformLocation(shader, "shininess"), 1, &mt.shininess);
 }
 
-//---------------------------------- physics update and billiard table rendering
-//----------------------------------
-void updateWorld() {
-  // Zero forces
-  int i, j;
-  for (i = 0; i < kNumBalls; i++) {
-    ball[i].F = SetVector(0, 0, 0);
-    ball[i].T = SetVector(0, 0, 0);
-  }
+//---------------------------------- physics update and billiard table rendering ----------------------------------
+void updateWorld()
+{
+	// Zero forces
+	int i, j;
+	for (i = 0; i < numBalls; i++)
+	{
+		ball[i].F = SetVector(0,0,0);
+		ball[i].T = SetVector(0,0,0);
+	}
 
-  // Wall tests
-  for (i = 0; i < kNumBalls; i++) {
-    if (ball[i].X.x < -0.82266270 + kBallSize)
-      ball[i].P.x = abs(ball[i].P.x);
-    if (ball[i].X.x > 0.82266270 - kBallSize)
-      ball[i].P.x = -abs(ball[i].P.x);
-    if (ball[i].X.z < -1.84146270 + kBallSize)
-      ball[i].P.z = abs(ball[i].P.z);
-    if (ball[i].X.z > 1.84146270 - kBallSize)
-      ball[i].P.z = -abs(ball[i].P.z);
-  }
+	// Wall tests
+	for (i = 0; i < numBalls; i++)
+	{
+		if (ball[i].X.x < -0.82266270 + kBallSize)
+			ball[i].P.x = abs(ball[i].P.x);
+		if (ball[i].X.x > 0.82266270 - kBallSize)
+			ball[i].P.x = -abs(ball[i].P.x);
+		if (ball[i].X.z < -1.84146270 + kBallSize)
+			ball[i].P.z = abs(ball[i].P.z);
+		if (ball[i].X.z > 1.84146270 - kBallSize)
+			ball[i].P.z = -abs(ball[i].P.z);
+	}
 
-  // Detect collisions, calculate speed differences, apply forces (uppgift 2)
-  for (i = 0; i < kNumBalls; i++) {
-    for (j = i + 1; j < kNumBalls; j++) // smart B)
-    {
-      // YOUR CODE HERE
-      float dist = Norm(ball[i].X - ball[j].X);
-      if (dist > 2 * kBallSize)
-        continue;
-      // MAYDAY
-      // WE HAVE COLLIDED!
+	// Detect collisions, calculate speed differences, apply forces (uppgift 2)
+	for (i = 0; i < numBalls; i++)
+        for (j = i+1; j < numBalls; j++)
+        {
+            // Check for collisions
+            vec3 dvec = ball[j].X - ball[i].X;
+            vec3 dvel = ball[j].v - ball[i].v;
+            float dist = sqrt(pow(dvec.x,2) + pow(dvec.z,2));
 
-      // Vp = V + w * Ra??
-      // Vrel = (Vpa - Vpb)
-      // formlua: J = (-2 * Vrel) / (1/ma * 1/mb) with eps = 1
-      // Imp = Jn
-      // dv = Imp/M
+            if(DotProduct(dvec, dvel) >= 0){
+                continue;
+            }
+            if(dist < kBallSize*2.25){
+                // We have a collision
 
-      if (dist < 0.000001) {
-        int xdir = (i % 3) - 1;
-        int ydir = (j % 3) - 1;
-        if (xdir == 0 && ydir == 0)
-          xdir = 1;
-        ball[j].X += (2 * kBallSize + 0.01) * vec3(xdir, 0., ydir);
-      }
+                // Calculate impulse
 
-      vec3 Ra = (ball[j].X - ball[i].X) / 2;
+                vec3 n = Normalize(-dvec);
 
-      vec3 n = normalize(Ra);
+                float v_rel = DotProduct((ball[i].v-ball[j].v), n);
+                float j_ = (-(elasticity + 1)*v_rel) / ((1.0/ball[i].mass)+(1.0/ball[j].mass));
+                vec3 imp = n*j_;
 
-      ball[j].X += ((2 * kBallSize + 0.0001) - dist) * n;
+                // No idea why the 0.5 is required
+                ball[i].F += imp*(1/deltaT)*0.5;
+                ball[j].F -= imp*(1/deltaT)*0.5;
+            }
+        }
 
-      vec3 Vpa = ball[i].v; // + cross(ball[i].omega, Ra);
-      vec3 Vpb = ball[j].v; // + cross(ball[j].omega, -Ra);
+	// Control rotation here to movement only, no friction (uppgift 1)
+	for (i = 0; i < numBalls; i++)
+	{
+		// YOUR CODE HERE
+		vec3 rot = CrossProduct(vec3(0,1,0), ball[i].v);
+		float amt = 0.3;
+        ball[i].R = Mult(ball[i].R, ArbRotate(rot, amt * Norm(ball[i].v)));
+	}
 
-      float Vrel = (Vpa - Vpb) * n;
+	// Control rotation here to reflect
+	// friction against floor, simplified as well as more correct (uppgift 3)
+	for (i = 0; i < numBalls; i++)
+	{
+		// YOUR CODE HERE
+	}
 
-      float J = (-2. * Vrel) / ((1 / ball[i].mass) + (1 / ball[j].mass));
+// Update state, follows the book closely
+	for (i = 0; i < numBalls; i++)
+	{
+		vec3 dX, dP, dL, dO;
+		mat4 Rd;
 
-      vec3 Imp = J * n;
+		// Note: omega is not set. How do you calculate it? (del av uppgift 2)
+		// YOUR CODE HERE
 
-      // std::cout << Imp.x << " - " << Imp.y << " - " << Imp.z << std::endl;
+//		v := P * 1/mass
+		ball[i].v = ball[i].P * 1.0/(ball[i].mass);
+//		X := X + v*dT
+		dX = ball[i].v * deltaT; // dX := v*dT
+		ball[i].X = ball[i].X + dX; // X := X + dX
+//		R := R + Rd*dT
+		dO = ball[i].omega * deltaT; // dO := omega*dT
+		Rd = CrossMatrix(dO); // Calc dO, add to R
+		Rd = Rd * ball[i].R; // Rotate the diff (NOTE: This was missing in early versions.)
+		ball[i].R = MatrixAdd(ball[i].R, Rd);
+//		P := P + F * dT
+		dP = ball[i].F * deltaT; // dP := F*dT
+		ball[i].P = ball[i].P + dP; // P := P + dP
+//		L := L + t * dT
+		dL = ball[i].T * deltaT; // dL := T*dT
+		ball[i].L = ball[i].L + dL; // L := L + dL
 
-      ball[i].P += Imp;  // dva * ball[i].mass;
-      ball[j].P += -Imp; // dvb * ball[j].mass;
-    }
-  }
-  // Control rotation here to movement only, no friction (uppgift 1)
-  for (i = 0; i < kNumBalls; i++) {
-    // YOUR CODE HERE
-    // vec3 axis = cross(vec3(0., 1., 0.), ball[i].v);
-    // mat4 rotation = ArbRotate(axis, Norm(ball[i].v) * kBallSize);
-    // ball[i].R = rotation * ball[i].R;
-  }
-
-  // Control rotation here to reflect
-  // friction against floor, simplified as well as more correct (uppgift 3)
-  for (i = 0; i < kNumBalls; i++) {
-    float mu = .6;
-    vec3 Vrel = ball[i].v - cross(ball[i].omega, vec3(0., kBallSize, 0.));
-
-    vec3 F = -Vrel * mu;
-
-    ball[i].T = cross(vec3(0., -kBallSize, 0.), F);
-
-    ball[i].F += F;
-  }
-
-  // Update state, follows the book closely
-  for (i = 0; i < kNumBalls; i++) {
-    vec3 dX, dP, dL, dO;
-    mat4 Rd;
-
-    // Note: omega is not set. How do you calculate it? (del av uppgift 2)
-    // YOUR CODE HERE
-
-    float Ji = 1 / (ball[i].mass / 3 * kBallSize * kBallSize);
-    // mat3 J_inv = mat3(1/(ball[i].mass / 3 * kBallSize*kBallSize), 0., 0.,
-    //   0., 1/(ball[i].mass / 3 * kBallSize*kBallSize), 0.,
-    //   0., 0., 1/(ball[i].mass / 3 * kBallSize*kBallSize));
-
-    ball[i].omega = Ji * ball[i].L;
-
-    //		v := P * 1/mass
-    ball[i].v = ball[i].P * 1.0 / (ball[i].mass);
-    //		X := X + v*dT
-    dX = ball[i].v * deltaT;     // dX := v*dT
-    ball[i].X = ball[i].X + dX;  // X := X + dX
-                                 //		R := R + Rd*dT
-    dO = ball[i].omega * deltaT; // dO := omega*dT
-    Rd = CrossMatrix(dO);        // Calc dO, add to R
-    Rd = Rd *
-         ball[i]
-             .R; // Rotate the diff (NOTE: This was missing in early versions.)
-    ball[i].R = MatrixAdd(ball[i].R, Rd);
-    //		P := P + F * dT
-    dP = ball[i].F * deltaT;    // dP := F*dT
-    ball[i].P = ball[i].P + dP; // P := P + dP
-                                //		L := L + t * dT
-    dL = ball[i].T * deltaT;    // dL := T*dT
-    ball[i].L = ball[i].L + dL; // L := L + dL
-
-    OrthoNormalizeMatrix(&ball[i].R);
-  }
+		OrthoNormalizeMatrix(&ball[i].R);
+	}
 }
 
-void renderBall(int ballNr) {
-  glBindTexture(GL_TEXTURE_2D, ball[ballNr].tex);
+void renderBall(int ballNr)
+{
+    glBindTexture(GL_TEXTURE_2D, ball[ballNr].tex);
 
-  // Ball with rotation
-  transMatrix = T(ball[ballNr].X.x, kBallSize, ball[ballNr].X.z); // position
-  tmpMatrix =
-      modelToWorldMatrix * transMatrix * ball[ballNr].R; // ball rotation
-  glUniformMatrix4fv(glGetUniformLocation(shader, "modelToWorldMatrix"), 1,
-                     GL_TRUE, tmpMatrix.m);
-  loadMaterial(ballMt);
-  DrawModel(sphere, shader, "in_Position", "in_Normal", NULL);
+    // Ball with rotation
+    transMatrix = T(ball[ballNr].X.x, kBallSize, ball[ballNr].X.z); // position
+    tmpMatrix = modelToWorldMatrix * transMatrix * ball[ballNr].R; // ball rotation
+    glUniformMatrix4fv(glGetUniformLocation(shader, "modelToWorldMatrix"), 1, GL_TRUE, tmpMatrix.m);
+    loadMaterial(ballMt);
+    DrawModel(sphere, shader, "in_Position", "in_Normal", NULL);
 
-  // Simple shadow
-  glBindTexture(GL_TEXTURE_2D, 0);
+    // Simple shadow
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-  tmpMatrix =
-      modelToWorldMatrix * S(1.0, 0.0, 1.0) * transMatrix * ball[ballNr].R;
-  glUniformMatrix4fv(glGetUniformLocation(shader, "modelToWorldMatrix"), 1,
-                     GL_TRUE, tmpMatrix.m);
-  loadMaterial(shadowMt);
-  DrawModel(sphere, shader, "in_Position", "in_Normal", NULL);
+    tmpMatrix = modelToWorldMatrix * S(1.0, 0.0, 1.0) * transMatrix * ball[ballNr].R;
+    glUniformMatrix4fv(glGetUniformLocation(shader, "modelToWorldMatrix"), 1, GL_TRUE, tmpMatrix.m);
+    loadMaterial(shadowMt);
+    DrawModel(sphere, shader, "in_Position", "in_Normal", NULL);
 }
 
-void renderTable() {
-  // Frame and legs, brown, no texture
-  loadMaterial(tableMt);
-  printError("loading material");
-  renderModelTexturePair(&tableAndLegs);
+void renderTable()
+{
+// Frame and legs, brown, no texture
+    loadMaterial(tableMt);
+    printError("loading material");
+    renderModelTexturePair(&tableAndLegs);
 
-  // Table surface (green texture)
-  loadMaterial(tableSurfaceMt);
-  renderModelTexturePair(&tableSurf);
+// Table surface (green texture)
+    loadMaterial(tableSurfaceMt);
+    renderModelTexturePair(&tableSurf);
 }
 //-------------------------------------------------------------------------------------
 
-void init() {
-  dumpInfo(); // shader info
+void init()
+{
+	dumpInfo();  // shader info
 
-  // GL inits
-  glClearDepth(1.0);
+	currentTime = 0.0;
 
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_BACK);
+	// GL inits
+	glClearDepth(1.0);
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
-  printError("GL inits");
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  // Load shader
-  shader = loadShaders("lab3.vert", "lab3.frag");
-  printError("init shader");
+    printError("GL inits");
 
-  loadModelTexturePair(&tableAndLegs, "tableandlegsnosurf.obj", 0);
-  loadModelTexturePair(&tableSurf, "tablesurf.obj", "surface.tga");
-  sphere = LoadModelPlus("sphere.obj");
+    // Load shader
+    shader = loadShaders("lab3.vert", "lab3.frag");
+    printError("init shader");
 
-  projectionMatrix =
-      perspective(90, 1.0, 0.1,
-                  1000); // It would be silly to upload an uninitialized matrix
-  glUniformMatrix4fv(glGetUniformLocation(shader, "projMatrix"), 1, GL_TRUE,
-                     projectionMatrix.m);
+    loadModelTexturePair(&tableAndLegs, "tableandlegsnosurf.obj", 0);
+    loadModelTexturePair(&tableSurf, "tablesurf.obj", "surface.tga");
+    sphere = LoadModelPlus("sphere.obj");
 
-  modelToWorldMatrix = IdentityMatrix();
+    projectionMatrix = perspective(90, 1.0, 0.1, 1000); // It would be silly to upload an uninitialized matrix
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
 
-  char *textureStr = (char *)malloc(128);
-  int i;
-  for (i = 0; i < kNumBalls; i++) {
-    sprintf(textureStr, "balls/%d.tga", i);
-    LoadTGATextureSimple(textureStr, &ball[i].tex);
-  }
-  free(textureStr);
+	modelToWorldMatrix = IdentityMatrix();
 
-  // Initialize ball data, positions etc
-  for (i = 0; i < kNumBalls; i++) {
-    ball[i].mass = 1.0;
-    ball[i].X = vec3(0.0, 0.0, 0.0);
-    ball[i].P = vec3(((float)(i % 13)) / 5.0, 0.0, ((float)(i % 15)) / 50.0);
-    ball[i].R = IdentityMatrix();
-    // init L?
-    ball[i].L = vec3(0.);
-    ball[i].omega = vec3(0.);
-  }
-  // case 1
-  // ball[0].X = vec3(0, 0, 0);
-  // ball[1].X = vec3(0, 0, 0.5);
-  // ball[2].X = vec3(0.0, 0, 1.0);
-  // ball[3].X = vec3(0, 0, 1.5);
-  // ball[0].P = vec3(0, 0, 0);
-  // ball[1].P = vec3(0, 0, 0);
-  // ball[2].P = vec3(0, 0, 0);
-  // ball[3].P = vec3(0, 0, 1.00);
 
-  // case 2
-  ball[0].X = vec3(0, 0, 0);
-  ball[1].X = vec3(0, 0, 0.5);
-  ball[2].X = vec3(0.0, 0, 1.0);
-  ball[3].X = vec3(0, 0, 1.5);
-  ball[0].P = vec3(0, 0, 0);
-  ball[1].P = vec3(0, 0, 0);
-  ball[2].P = vec3(0, 0, 0);
-  ball[3].P = vec3(0, 0, 1.00);
-  // ball[0].mass = 3.0;
+    int i;
 
-  cam = vec3(0, 1.2, 2.5);
-  point = vec3(0, 0, 1.0);
-  viewMatrix = lookAtv(cam, point, vec3(0, 1, 0));
+	int scenario = 0; // 0: chaos, 1: newton
+    switch(scenario){
+    case 0:
+        elasticity = 0.8;
+        numBalls = 16;
+
+        // Initialize ball data, positions etc
+        for (i = 0; i < numBalls; i++)
+        {
+            ball[i].mass = 1.0;
+            ball[i].X = vec3(0.0, 0.0, 0.0);
+            ball[i].P = vec3(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
+            ball[i].R = IdentityMatrix();
+        }
+        ball[0].mass = 100.0;
+        ball[0].X = vec3(0, 0, 0);
+        ball[1].X = vec3(0, 0, 0.5);
+        ball[2].X = vec3(0.0, 0, 1.0);
+        ball[3].X = vec3(0, 0, 1.5);
+        ball[0].P = vec3(0.5, 0, -0.3)*1000;
+        ball[1].P = vec3(0, 0, 0);
+        ball[2].P = vec3(0, 0, 0);
+        ball[3].P = vec3(0, 0, 1.0);
+
+        break;
+    case 1:
+        numBalls = 4;
+        break;
+    default:
+        break;
+    }
+
+    char *textureStr = (char *)malloc(128);
+    for(i = 0; i < kNumBalls; i++)
+    {
+        sprintf(textureStr, "balls/%d.tga", i);
+        LoadTGATextureSimple(textureStr, &ball[i].tex);
+    }
+	free(textureStr);
+
+
+
+    cam = vec3(0, 1.2, 2.5);
+    point = vec3(0, 0, 1.0);
+    viewMatrix = lookAtv(cam, point, vec3(0, 1, 0));
 }
 
-//-------------------------------callback
-// functions------------------------------------------
-void display(void) {
-  deltaT = glutGet(GLUT_ELAPSED_TIME) / 1000.0 - currentTime;
-  currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+//-------------------------------callback functions------------------------------------------
+void display(void)
+{
+    deltaT = glutGet(GLUT_ELAPSED_TIME) / 1000.0 - currentTime;
+    if(currentTime == 0.0){
+        deltaT = 0.0;
+    }
 
-  int i;
-  // This function is called whenever it is time to render
-  //  a new frame; due to the idle()-function below, this
-  //  function will get called several times per second
-  updateWorld();
+	currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-  // Clear framebuffer & zbuffer
-  glClearColor(0.2, 0.3, 0.6, 0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	int i;
+    // This function is called whenever it is time to render
+    //  a new frame; due to the idle()-function below, this
+    //  function will get called several times per second
+    updateWorld();
 
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_BACK);
+    // Clear framebuffer & zbuffer
+	glClearColor(0.4, 0.5, 0.9, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  glUniformMatrix4fv(glGetUniformLocation(shader, "viewMatrix"), 1, GL_TRUE,
-                     viewMatrix.m);
-  glUniformMatrix4fv(glGetUniformLocation(shader, "modelToWorldMatrix"), 1,
-                     GL_TRUE, modelToWorldMatrix.m);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
-  printError("uploading to shader");
+    glUniformMatrix4fv(glGetUniformLocation(shader, "viewMatrix"), 1, GL_TRUE, viewMatrix.m);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "modelToWorldMatrix"), 1, GL_TRUE, modelToWorldMatrix.m);
 
-  renderTable();
+    printError("uploading to shader");
 
-  for (i = 0; i < kNumBalls; i++)
-    renderBall(i);
+    renderTable();
 
-  printError("rendering");
+	for (i = 0; i < numBalls; i++)
+        renderBall(i);
 
-  glutSwapBuffers();
+    printError("rendering");
+
+	glutSwapBuffers();
 }
 
 // Trackball
-// This is ONLY for making it possible to rotate the table in order to inspect
-// it.
+// This is ONLY for making it possible to rotate the table in order to inspect it.
 
 int prevx = 0, prevy = 0;
 
-void mouseUpDown(int button, int state, int x, int y) {
-  if (state == GLUT_DOWN) {
-    prevx = x;
-    prevy = y;
-  }
+void mouseUpDown(int button, int state, int x, int y)
+{
+	if (state == GLUT_DOWN)
+	{
+		prevx = x;
+		prevy = y;
+	}
 }
 
-void mouseDragged(int x, int y) {
-  vec3 p;
-  mat4 m;
+void mouseDragged(int x, int y)
+{
+	vec3 p;
+	mat4 m;
 
-  // This is a simple and IMHO really nice trackball system:
+	// This is a simple and IMHO really nice trackball system:
 
-  // Use the movement direction to create an orthogonal rotation axis
+	// Use the movement direction to create an orthogonal rotation axis
 
-  p.y = x - prevx;
-  p.x = -(prevy - y);
-  p.z = 0;
+	p.y = x - prevx;
+	p.x = -(prevy - y);
+	p.z = 0;
 
-  // Create a rotation around this axis and premultiply it on the model-to-world
-  // matrix Limited to fixed camera! Will be wrong if the camera is moved!
+	// Create a rotation around this axis and premultiply it on the model-to-world matrix
+	// Limited to fixed camera! Will be wrong if the camera is moved!
 
-  m = ArbRotate(p, sqrt(p.x * p.x + p.y * p.y) /
-                       250.0); // Rotation in view coordinates
-  modelToWorldMatrix = m * modelToWorldMatrix;
+	m = ArbRotate(p, sqrt(p.x*p.x + p.y*p.y) / 250.0); // Rotation in view coordinates
+	modelToWorldMatrix = m * modelToWorldMatrix;
 
-  prevx = x;
-  prevy = y;
+	prevx = x;
+	prevy = y;
 
-  glutPostRedisplay();
+	glutPostRedisplay();
 }
 
-void reshape(GLsizei w, GLsizei h) {
-  lastw = w;
-  lasth = h;
+void reshape(GLsizei w, GLsizei h)
+{
+	lastw = w;
+	lasth = h;
 
-  glViewport(0, 0, w, h);
-  GLfloat ratio = (GLfloat)w / (GLfloat)h;
-  projectionMatrix = perspective(90, ratio, 0.1, 1000);
-  glUniformMatrix4fv(glGetUniformLocation(shader, "projMatrix"), 1, GL_TRUE,
-                     projectionMatrix.m);
+    glViewport(0, 0, w, h);
+    GLfloat ratio = (GLfloat) w / (GLfloat) h;
+    projectionMatrix = perspective(90, ratio, 0.1, 1000);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
 }
 
 //-----------------------------main-----------------------------------------------
-int main(int argc, char **argv) {
-  glutInit(&argc, argv);
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
-  glutInitWindowSize(W, H);
-  glutInitContextVersion(3, 2);
-  glutCreateWindow("Biljardbordet");
-  glutDisplayFunc(display);
-  glutReshapeFunc(reshape);
+int main(int argc, char **argv)
+{
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
+	glutInitWindowSize(initWidth, initHeight);
+	glutInitContextVersion(3, 2);
+	glutCreateWindow ("Biljardbordet");
+	glutDisplayFunc(display);
+	glutReshapeFunc(reshape);
 
-  glutMouseFunc(mouseUpDown);
-  glutMotionFunc(mouseDragged);
+	glutMouseFunc(mouseUpDown);
+	glutMotionFunc(mouseDragged);
 
-  glutRepeatingTimer(20);
+	glutRepeatingTimer(20);
 
-  init();
+	init();
 
-  glutMainLoop();
-  exit(0);
+	glutMainLoop();
+	exit(0);
 }

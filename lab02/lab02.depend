@@ -62,7 +62,7 @@
 
 1757589058 c:\_dev\tsbk-labs\common\windows\microglut.h
 
-1758035163 source:c:\_dev\tsbk-labs\lab02\skinning.cpp
+1758195696 source:c:\_dev\tsbk-labs\lab02\skinning.cpp
 	<stdio.h>
 	<math.h>
 	<stdlib.h>
@@ -89,7 +89,7 @@
 	<math.h>
 	"VectorUtils4.h"
 
-1758094029 source:c:\_dev\tsbk-labs\lab02\skinning2.cpp
+1758094544 source:c:\_dev\tsbk-labs\lab02\skinning2.cpp
 	<stdio.h>
 	<math.h>
 	<stdlib.h>

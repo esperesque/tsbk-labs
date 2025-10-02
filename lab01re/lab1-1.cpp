@@ -84,6 +84,7 @@ void init(void)
 {
 	dumpInfo();  // shader info
 
+	int blah = 5;
 	// GL inits
 	glClearColor(0.1, 0.1, 0.3, 0);
 	glClearDepth(1.0);
@@ -158,23 +159,28 @@ void display(void)
 	//runfilter(lpshader, fbo1, 0L, 0L);
 
 	// 1c: ping-pong
+
 	/*
-	pingpong(lpshader, fbo1, fbo2, 50);
+	pingpong(lpshader, fbo1, fbo2, 10);
 	useFBO(0L, fbo1, 0L);
 	DrawModel(squareModel, lpshader, "in_Position", NULL, "in_TexCoord");
-	*/
+    */
 
 	// 1d: blooming-filter (demonstrate thresholding)
+
 	/*
 	runfilter(thresholdshader, fbo1, 0L, fbo2);
-	pingpong(lpshader, fbo2, fbo1, 50);
+	pingpong(lpshader, fbo2, fbo1, 10);
 	runfilter(lpshader, fbo2, 0L, 0L);
-	*/
+    */
 
 	// 1e: composite thresholded image and original
+
+
 	runfilter(thresholdshader, fbo1, 0L, fbo2);
-	pingpong(lpshader, fbo2, fbo3, 50);
+	pingpong(lpshader, fbo2, fbo3, 10);
     runfilter(plusshader, fbo1, fbo2, 0L);
+
 
 	// Done rendering the FBO! Set up for rendering on screen, using the result as texture!
 

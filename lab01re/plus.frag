@@ -11,5 +11,5 @@ void main(void)
     //float threshold = 1.0;
     //vec4 samp = texture(texUnit, outTexCoord);
 
-    out_Color = texture(texUnit, outTexCoord) + texture(texUnit2, outTexCoord);
+    out_Color = texture(texUnit, outTexCoord) + 0.5*texture(texUnit2, outTexCoord);
 }

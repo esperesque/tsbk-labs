@@ -117,6 +117,7 @@ void init(void)
 	dumpInfo();  // shader info
 
 	// GL inits
+
 	glClearColor(0.5, 0.6, 1.0, 0);
 	glClearDepth(1.0);
 

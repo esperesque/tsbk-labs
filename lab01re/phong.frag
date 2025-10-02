@@ -25,10 +25,10 @@ void main(void)
 	vec3 v = normalize(-exSurface); // View direction
 	specular = dot(r, v);
 	if (specular > 0.0)
-		specular = 1.0 * pow(specular, 150.0);
+		specular = 1.0 * pow(specular, 50.0);
 	specular = max(specular, 0.0);
 	// These settings should give a few spots with shade > 2.0
-	shade = 1.1*diffuse + 1.3*specular;
+	shade = 0.9*diffuse + 0.9*specular;
 
     outColor = vec4(shade, shade, shade, 1.0);
 }

@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1675154278 source:c:\_dev\tsbk-labs\common\gl_utilities.c
+1757589058 source:c:\_dev\tsbk-labs\common\gl_utilities.c
 	<Windows.h>
 	<stdlib.h>
 	<stdio.h>
@@ -7,14 +7,14 @@
 	<string.h>
 	"GL_utilities.h"
 
-1601082610 c:\_dev\tsbk-labs\common\gl_utilities.h
+1757589058 c:\_dev\tsbk-labs\common\gl_utilities.h
 	<OpenGL/gl3.h>
 	"glew.h"
 	<GL/gl.h>
 	<GL/gl.h>
 	<stdlib.h>
 
-1504151932 c:\_dev\tsbk-labs\common\windows\glew.h
+1757589058 c:\_dev\tsbk-labs\common\windows\glew.h
 	<stddef.h>
 	<inttypes.h>
 	<stdint.h>
@@ -23,10 +23,10 @@
 	<OpenGL/glu.h>
 	<GL/glu.h>
 
-1713339770 source:c:\_dev\tsbk-labs\common\loadtga.c
+1757589058 source:c:\_dev\tsbk-labs\common\loadtga.c
 	"LoadTGA.h"
 
-1668936494 c:\_dev\tsbk-labs\common\loadtga.h
+1757589058 c:\_dev\tsbk-labs\common\loadtga.h
 	<OpenGL/gl3.h>
 	"glew.h"
 	<GL/gl.h>
@@ -34,7 +34,7 @@
 	<stdlib.h>
 	<string.h>
 
-1504151932 source:c:\_dev\tsbk-labs\common\windows\glew.c
+1757589058 source:c:\_dev\tsbk-labs\common\windows\glew.c
 	"glew.h"
 	"wglew.h"
 	<GL/glxew.h>
@@ -48,10 +48,10 @@
 	<dlfcn.h>
 	<mach-o/dyld.h>
 
-1504151932 c:\_dev\tsbk-labs\common\windows\wglew.h
+1757589058 c:\_dev\tsbk-labs\common\windows\wglew.h
 	<windows.h>
 
-1713525027 source:c:\_dev\tsbk-labs\common\windows\microglut.c
+1757589058 source:c:\_dev\tsbk-labs\common\windows\microglut.c
 	<windows.h>
 	"glew.h"
 	<gl/gl.h>
@@ -60,9 +60,9 @@
 	<io.h>
 	<fcntl.h>
 
-1713525814 c:\_dev\tsbk-labs\common\windows\microglut.h
+1757589058 c:\_dev\tsbk-labs\common\windows\microglut.h
 
-1759330693 source:c:\_dev\tsbk-labs\lab04\lab4.cpp
+1759403187 source:c:\_dev\tsbk-labs\lab04\lab4.cpp
 	<iostream>
 	<stdlib.h>
 	"MicroGlut.h"
@@ -72,18 +72,18 @@
 	"VectorUtils4.h"
 	"SimpleGUI.h"
 
-1759329726 c:\_dev\tsbk-labs\lab04\spritelight.h
+1759403187 c:\_dev\tsbk-labs\lab04\spritelight.h
 	"LoadTGA.h"
 	"VectorUtils4.h"
 
-1713426668 c:\_dev\tsbk-labs\common\vectorutils4.h
+1757589058 c:\_dev\tsbk-labs\common\vectorutils4.h
 	<OpenGL/gl3.h>
 	"glew.h"
 	<GL/gl.h>
 	<math.h>
 	<stdio.h>
 
-1680337022 c:\_dev\tsbk-labs\lab04\simplegui.h
+1759403187 c:\_dev\tsbk-labs\lab04\simplegui.h
 	<OpenGL/gl3.h>
 	<GL/gl.h>
 	"MicroGlut.h"
@@ -103,7 +103,7 @@
 	"GL_utilities.h"
 	"SimpleGUI.h"
 
-1758802932 source:c:\_dev\tsbk-labs\lab04\simplegui.cpp
+1759403187 source:c:\_dev\tsbk-labs\lab04\simplegui.cpp
 	<stdlib.h>
 	<stdio.h>
 	<math.h>
@@ -111,7 +111,7 @@
 	"GL_utilities.h"
 	"SimpleGUI.h"
 
-1759330121 source:c:\_dev\tsbk-labs\lab04\spritelight.cpp
+1759403187 source:c:\_dev\tsbk-labs\lab04\spritelight.cpp
 	"SpriteLight.h"
 	"LoadTGA.h"
 	<math.h>

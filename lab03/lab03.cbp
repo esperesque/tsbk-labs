@@ -41,13 +41,13 @@
 		<Unit filename="../common/Windows/glew.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="lab3.cpp" />
-		<Unit filename="lab3.frag" />
-		<Unit filename="lab3.vert" />
-		<Unit filename="lab3re.cpp">
+		<Unit filename="lab3.cpp">
 			<Option compile="0" />
 			<Option link="0" />
 		</Unit>
+		<Unit filename="lab3.frag" />
+		<Unit filename="lab3.vert" />
+		<Unit filename="lab3re.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>

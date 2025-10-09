@@ -182,10 +182,11 @@ void updateWorld()
 	// Control rotation here to movement only, no friction (uppgift 1)
 	for (i = 0; i < numBalls; i++)
 	{
-		// YOUR CODE HERE
+	    /*
 		vec3 rot = CrossProduct(vec3(0,1,0), ball[i].v);
 		float amt = 0.3;
         ball[i].R = Mult(ball[i].R, ArbRotate(rot, amt * Norm(ball[i].v)));
+        */
 	}
 
 	// Control rotation here to reflect
@@ -193,6 +194,16 @@ void updateWorld()
 	for (i = 0; i < numBalls; i++)
 	{
 		// YOUR CODE HERE
+		float frictionCoeff = 1.0;
+		vec3 surface = vec3(0.0, -kBallSize, 0.0);
+		//vec3 forceNormal = (0.0, 9.82*ball[i].mass, 0.0);
+		vec3 frictionForce = (ball[i].v + CrossProduct(ball[i].omega, surface)) * frictionCoeff;
+
+		// T = r x fric
+		// F = -vel * fricF
+		ball[i].T += CrossProduct(frictionForce, surface);
+
+		ball[i].F -= frictionForce;
 	}
 
 // Update state, follows the book closely
@@ -203,6 +214,12 @@ void updateWorld()
 
 		// Note: omega is not set. How do you calculate it? (del av uppgift 2)
 		// YOUR CODE HERE
+		float ii = 2.0/5.0 * ball[i].mass * kBallSize*kBallSize; // Inertia for sphere
+		mat3 I = {ii, 0.0, 0.0,
+                  0.0, ii, 0.0,
+                  0.0, 0.0, ii};
+        mat3 I_inv = InvertMat3(I);
+		ball[i].omega = I_inv * ball[i].L;
 
 //		v := P * 1/mass
 		ball[i].v = ball[i].P * 1.0/(ball[i].mass);
@@ -295,8 +312,8 @@ void init()
 	int scenario = 0; // 0: chaos, 1: newton
     switch(scenario){
     case 0:
-        elasticity = 0.8;
-        numBalls = 16;
+        elasticity = 0.5;
+        numBalls = 6;
 
         // Initialize ball data, positions etc
         for (i = 0; i < numBalls; i++)
@@ -306,12 +323,12 @@ void init()
             ball[i].P = vec3(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
             ball[i].R = IdentityMatrix();
         }
-        ball[0].mass = 100.0;
+        //ball[0].mass = 100.0;
         ball[0].X = vec3(0, 0, 0);
         ball[1].X = vec3(0, 0, 0.5);
         ball[2].X = vec3(0.0, 0, 1.0);
         ball[3].X = vec3(0, 0, 1.5);
-        ball[0].P = vec3(0.5, 0, -0.3)*1000;
+        ball[0].P = vec3(0.5, 0, -0.3);
         ball[1].P = vec3(0, 0, 0);
         ball[2].P = vec3(0, 0, 0);
         ball[3].P = vec3(0, 0, 1.0);
